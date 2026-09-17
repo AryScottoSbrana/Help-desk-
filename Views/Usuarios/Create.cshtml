@@ -1,0 +1,93 @@
+@model HelpDesk.ViewModels.UsuarioCreateViewModel
+@{
+    ViewData["Title"] = "Novo usuário";
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Help Desk — Novo usuário</title>
+    <link rel="stylesheet" href="~/css/helpdesk.css" />
+</head>
+<body class="helpdesk">
+
+    <div class="hd-topbar">
+        <div class="hd-marca-grupo">
+            <span class="hd-marca">Help Desk</span>
+            <span class="hd-sub">Central de atendimento e suporte</span>
+        </div>
+        <nav class="hd-nav">
+            <a href="@Url.Action("Index", "Tickets")">Chamados</a>
+            <a class="ativo" href="@Url.Action("Index", "Usuarios")">Usuários</a>
+        </nav>
+    </div>
+
+    <div class="hd-container" style="max-width:640px;">
+
+        <div class="hd-page-header">
+            <div>
+                <h1>Novo usuário</h1>
+                <p>Cadastre um solicitante, atendente ou administrador do Help Desk.</p>
+            </div>
+            <a class="btn-hd-outline" href="@Url.Action("Index", "Usuarios")">Voltar para a lista</a>
+        </div>
+
+        <div class="hd-filtros" style="padding:24px;">
+
+            <div asp-validation-summary="ModelOnly" class="hd-badge sla-estourado" style="display:block; padding:10px 14px; margin-bottom:16px;"></div>
+
+            <form asp-action="Create" asp-controller="Usuarios" method="post">
+                @Html.AntiForgeryToken()
+
+                <div class="campo" style="margin-bottom:16px;">
+                    <label asp-for="Nome">Nome completo</label>
+                    <input asp-for="Nome" type="text" style="width:98%;" placeholder="Ex.: Ana Souza" />
+                    <span asp-validation-for="Nome" class="hd-titulo-linha" style="color:var(--hd-sla-estourado);"></span>
+                </div>
+
+                <div class="campo" style="margin-bottom:16px;">
+                    <label asp-for="Email">E-mail</label>
+                    <input asp-for="Email" type="email" style="width:98%;" placeholder="nome@empresa.com" />
+                    <span asp-validation-for="Email" class="hd-titulo-linha" style="color:var(--hd-sla-estourado);"></span>
+                </div>
+
+                <div class="linha" style="margin-bottom:16px;">
+                    <div class="campo" style="flex:1;">
+                        <label asp-for="Senha">Senha</label>
+                        <input asp-for="Senha" type="password" style="width:95%;" />
+                        <span asp-validation-for="Senha" class="hd-titulo-linha" style="color:var(--hd-sla-estourado);"></span>
+                    </div>
+                    <div class="campo" style="flex:1;">
+                        <label asp-for="ConfirmarSenha">Confirmar senha</label>
+                        <input asp-for="ConfirmarSenha" type="password" style="width:95%;" />
+                        <span asp-validation-for="ConfirmarSenha" class="hd-titulo-linha" style="color:var(--hd-sla-estourado);"></span>
+                    </div>
+                </div>
+
+                <div class="linha" style="margin-bottom:22px;">
+                    <div class="campo">
+                        <label asp-for="PerfilId">Perfil de acesso</label>
+                        <select asp-for="PerfilId">
+                            <option value="">Selecione...</option>
+                            @foreach (var p in Model.Perfis)
+                            {
+                                <option value="@p.Id">@p.Nome</option>
+                            }
+                        </select>
+                        <span asp-validation-for="PerfilId" class="hd-titulo-linha" style="color:var(--hd-sla-estourado);"></span>
+                    </div>
+
+                    <div class="campo campo-check" style="align-self:center;">
+                        <input asp-for="Ativo" type="checkbox" />
+                        <label asp-for="Ativo">Usuário ativo</label>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-hd-primary">Cadastrar usuário</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

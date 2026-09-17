@@ -1,0 +1,179 @@
+@model HelpDesk.ViewModels.TicketDetailsViewModel
+@{
+    ViewData["Title"] = $"Ticket {Model.NumeroTicket}";
+
+    var (classeSla, textoSla) = Model.Sla switch
+    {
+        HelpDesk.ViewModels.SlaSituacao.DentroDoPrazo => ("sla-ok", "Dentro do prazo"),
+        HelpDesk.ViewModels.SlaSituacao.ProximoDoLimite => ("sla-alerta", "Próximo do limite"),
+        HelpDesk.ViewModels.SlaSituacao.Estourado => ("sla-estourado", "SLA estourado"),
+        _ => ("sla-encerrado", "Encerrado")
+    };
+}
+<div class="hd-container" style="max-width:900px;">
+
+        @if (TempData["Mensagem"] != null)
+        {
+            <div class="hd-badge sla-ok" style="margin-bottom:14px; display:block; padding:10px 14px;">@TempData["Mensagem"]</div>
+        }
+
+        @if (TempData["Erro"] != null)
+        {
+            <div class="hd-badge sla-estourado" style="margin-bottom:14px; display:block; padding:10px 14px;">@TempData["Erro"]</div>
+        }
+
+        <div class="hd-page-header">
+            <div>
+                <h1>@Model.NumeroTicket — @Model.Titulo</h1>
+                <p>Aberto por @Model.Solicitante em @Model.DataAbertura.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</p>
+            </div>
+            <a class="btn-hd-outline" href="@Url.Action("Index", "Tickets")">Voltar para a lista</a>
+        </div>
+
+        <div class="hd-kpis" style="grid-template-columns: repeat(4, 1fr);">
+            <div class="hd-kpi">
+                <div class="rotulo" style="margin-bottom:6px;">Status</div>
+                <span class="hd-badge status">@Model.Status</span>
+            </div>
+            <div class="hd-kpi">
+                <div class="rotulo" style="margin-bottom:6px;">Prioridade</div>
+                <span class="hd-prioridade-dot" style="background:@(Model.PrioridadeCorHex ?? "#999")"></span>@Model.Prioridade
+            </div>
+            <div class="hd-kpi">
+                <div class="rotulo" style="margin-bottom:6px;">SLA</div>
+                <span class="hd-badge @classeSla">@textoSla</span>
+                <div class="hd-titulo-linha">até @Model.DataLimiteSla.ToLocalTime().ToString("dd/MM HH:mm")</div>
+            </div>
+            <div class="hd-kpi">
+                <div class="rotulo" style="margin-bottom:6px;">Atendente</div>
+                <div>@(Model.Atendente ?? "Não atribuído")</div>
+            </div>
+        </div>
+
+        <div class="hd-filtros" style="padding:20px;">
+            <label style="display:block; margin-bottom:8px;">Descrição da necessidade</label>
+            <p style="white-space:pre-wrap; margin:0;">@Model.Descricao</p>
+        </div>
+
+        @if (Model.Anexos.Any())
+        {
+        <div class="hd-filtros" style="padding:20px; margin-top:16px; grid-template-columns: repeat(4, 1fr);">
+                <label style="display:block; margin-bottom:10px;">Anexos (@Model.Anexos.Count)</label>
+                <div style="display:flex; flex-wrap:wrap; gap:10px;">
+                    @foreach (var a in Model.Anexos)
+                    {
+                        <a href="@a.CaminhoArquivo" target="_blank" class="btn-hd-outline" style="font-size:12.5px;">
+                            @a.NomeArquivoOriginal
+                        </a>
+                    }
+                </div>
+            </div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(Model.Solucao))
+        {
+            <div class="hd-filtros" style="padding:20px; margin-top:16px; border-color:var(--hd-sla-ok);">
+                <label style="display:block; margin-bottom:8px; color:var(--hd-sla-ok);">Solução aplicada</label>
+                <p style="white-space:pre-wrap; margin:0;">@Model.Solucao</p>
+            </div>
+        }
+
+        <div class="hd-filtros" style="padding:20px; margin-top:16px;">
+            <label style="display:block; margin-bottom:12px;">Histórico do chamado</label>
+            @if (!Model.Historico.Any())
+            {
+                <p class="hd-titulo-linha">Sem eventos registrados ainda.</p>
+            }
+            else
+            {
+                <div style="display:flex; flex-direction:column; gap:12px;">
+                    @foreach (var h in Model.Historico)
+                    {
+                        <div style="border-left:2px solid var(--hd-border); padding-left:12px;">
+                            <div class="hd-titulo-linha">
+                                @h.DataHora.ToLocalTime().ToString("dd/MM/yyyy HH:mm") — <strong>@h.Usuario</strong>
+                                @if (h.StatusNovo != null)
+                                {
+                                    <text> · @(h.StatusAnterior != null ? h.StatusAnterior + " → " : "")@h.StatusNovo</text>
+                                }
+                            </div>
+
+                            @if (!string.IsNullOrWhiteSpace(h.Comentario))
+                            {
+                                <div style="margin-top:2px;">@h.Comentario</div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+        @if (!Model.StatusFinal)
+        {
+            <div class="hd-filtros" style="padding:20px; margin-top:16px;">
+                <label style="display:block; margin-bottom:10px;">Adicionar comentário ou anexo</label>
+                <form asp-action="AdicionarComentario" asp-controller="Tickets" method="post" enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="ticketId" value="@Model.Id" />
+                    <textarea name="novoComentario" rows="3" style="width:98%; border:1px solid var(--hd-border); border-radius:6px; padding:10px; font:inherit; margin-bottom:10px;" placeholder="Escreva uma atualização..."></textarea>
+                    <input type="file" name="novosAnexos" multiple accept=".jpg,.jpeg,.png,.gif,.pdf" style="margin-bottom:12px;" />
+                    <br />
+                    <button type="submit" class="btn-hd-outline">Enviar</button>
+                </form>
+            </div>
+
+            @if (Model.PodeGerenciarAtendimento)
+            {
+                <div class="hd-filtros" style="padding:20px; margin-top:16px;">
+                    <label style="display:block; margin-bottom:10px;">Atendente responsável</label>
+                    <form asp-action="AtribuirAtendente" asp-controller="Tickets" method="post" style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap;">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="ticketId" value="@Model.Id" />
+                        <div class="campo" style="flex:1; min-width:220px;">
+                            <label>Atendente</label>
+                            <select name="atendenteId" style="width:100%;">
+                                <option value="">Não atribuído</option>
+                                @foreach (var a in Model.AtendentesDisponiveis)
+                                {
+                                    <option value="@a.Id" selected="@(a.Id == Model.AtendenteId)">@a.Nome</option>
+                                }
+                            </select>
+                        </div>
+                        <button type="submit" class="btn-hd-outline">Salvar atendente</button>
+                    </form>
+                </div>
+
+                <div class="hd-filtros" style="padding:20px; margin-top:16px;">
+                    <label style="display:block; margin-bottom:10px;">Alterar status</label>
+                    <form asp-action="AlterarStatus" asp-controller="Tickets" method="post" style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap;">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="ticketId" value="@Model.Id" />
+                        <div class="campo">
+                            <label>Novo status</label>
+                            <select name="novoStatusId">
+                                @foreach (var s in Model.StatusDisponiveis)
+                                {
+                                    <option value="@s.Id" selected="@(s.Id == Model.StatusId)">@s.Nome</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="campo" style="flex:1; min-width:180px;">
+                            <label>Comentário (opcional)</label>
+                            <input type="text" name="comentario" style="width:95%;" />
+                        </div>
+                        <button type="submit" class="btn-hd-outline">Atualizar status</button>
+                    </form>
+                </div>
+
+                <div class="hd-filtros" style="padding:20px; margin-top:16px; border-color:var(--hd-sla-ok);">
+                    <label style="display:block; margin-bottom:10px;">Fechar chamado com solução</label>
+                    <form asp-action="Fechar" asp-controller="Tickets" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="ticketId" value="@Model.Id" />
+                        <textarea name="solucaoInput" rows="4" style="width:98%; border:1px solid var(--hd-border); border-radius:6px; padding:10px; font:inherit; margin-bottom:12px;" placeholder="Descreva a solução aplicada para encerrar o chamado."></textarea>
+                        <button type="submit" class="btn-hd-primary">Fechar chamado</button>
+                    </form>
+                </div>
+            }
+        }
+    </div>

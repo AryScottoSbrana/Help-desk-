@@ -1,0 +1,81 @@
+@model HelpDesk.ViewModels.TicketCreateViewModel
+@{
+    ViewData["Title"] = "Novo chamado";
+}
+<div class="hd-container" style="max-width:760px;">
+
+    <div class="hd-page-header">
+        <div>
+            <h1>Abrir novo chamado</h1>
+            <p>Descreva sua necessidade com o máximo de detalhes e anexe imagens de comprovação, se houver.</p>
+        </div>
+        <a class="btn-hd-outline" href="@Url.Action("Index", "Tickets")">Voltar para a lista</a>
+    </div>
+
+    <div class="hd-filtros" style="padding:24px;">
+
+        <div asp-validation-summary="ModelOnly" class="hd-badge sla-estourado" style="display:block; padding:10px 14px; margin-bottom:16px;"></div>
+
+        <form asp-action="Create" asp-controller="Tickets" method="post" enctype="multipart/form-data">
+            @Html.AntiForgeryToken()
+
+            <div class="campo" style="margin-bottom:16px;">
+                <label asp-for="Titulo">Título</label>
+                <input asp-for="Titulo" type="text" style="width:98%;" placeholder="Ex.: Notebook não liga" />
+                <span asp-validation-for="Titulo" class="hd-titulo-linha" style="color:var(--hd-sla-estourado);"></span>
+            </div>
+
+            <div class="campo" style="margin-bottom:16px;">
+                <label asp-for="Descricao">Descrição da necessidade</label>
+                <textarea asp-for="Descricao" rows="6" style="width:98%; border:1px solid var(--hd-border); border-radius:6px; padding:10px; font:inherit;" placeholder="Explique o que está acontecendo, quando começou e o impacto no seu trabalho."></textarea>
+                <span asp-validation-for="Descricao" class="hd-titulo-linha" style="color:var(--hd-sla-estourado);"></span>
+            </div>
+
+            <div class="linha" style="margin-bottom:16px;">
+                <div class="campo" style="flex:1; min-width:180px;">
+                    <label asp-for="ModuloId">Módulo</label>
+                    <select asp-for="ModuloId" style="width:100%;">
+                        <option value="">Selecione...</option>
+                        @foreach (var m in Model.Modulos)
+                        {
+                            <option value="@m.Id">@m.Nome</option>
+                        }
+                    </select>
+                    <span asp-validation-for="ModuloId" class="hd-titulo-linha" style="color:var(--hd-sla-estourado);"></span>
+                </div>
+
+                <div class="campo" style="flex:1; min-width:180px;">
+                    <label asp-for="CategoriaId">Categoria</label>
+                    <select asp-for="CategoriaId" style="width:100%;">
+                        <option value="">Selecione...</option>
+                        @foreach (var c in Model.Categorias)
+                        {
+                            <option value="@c.Id">@c.Nome</option>
+                        }
+                    </select>
+                    <span asp-validation-for="CategoriaId" class="hd-titulo-linha" style="color:var(--hd-sla-estourado);"></span>
+                </div>
+
+                <div class="campo" style="flex:1; min-width:220px;">
+                    <label asp-for="PrioridadeId">Prioridade</label>
+                    <select asp-for="PrioridadeId" style="width:100%;">
+                        <option value="">Selecione...</option>
+                        @foreach (var p in Model.Prioridades)
+                        {
+                            <option value="@p.Id">@p.Nome — atendimento em até @p.TempoSlaHoras h</option>
+                        }
+                    </select>
+                    <span asp-validation-for="PrioridadeId" class="hd-titulo-linha" style="color:var(--hd-sla-estourado);"></span>
+                </div>
+            </div>
+
+            <div class="campo" style="margin-bottom:22px;">
+                <label asp-for="Anexos">Anexos (imagens de comprovação)</label>
+                <input type="file" name="Anexos" multiple accept=".jpg,.jpeg,.png,.gif,.pdf" />
+                <span class="hd-titulo-linha">Formatos aceitos: JPG, PNG, GIF, PDF — até 5 MB por arquivo.</span>
+            </div>
+
+            <button type="submit" class="btn-hd-primary">Abrir chamado</button>
+        </form>
+    </div>
+</div>

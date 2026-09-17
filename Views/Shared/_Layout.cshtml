@@ -1,0 +1,108 @@
+@{
+    var controllerAtual = ViewContext.RouteData.Values["controller"]?.ToString();
+    var acaoAtual = ViewContext.RouteData.Values["action"]?.ToString();
+    var usuarioLogadoId = Context.Session.GetInt32("UsuarioId");
+
+    string ClasseAtiva(string controller, string acao) =>
+        controllerAtual == controller && acaoAtual == acao ? "ativo" : "";
+}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Help Desk — @ViewData["Title"]</title>
+    <link rel="stylesheet" href="~/css/helpdesk.css" />
+</head>
+<body class="helpdesk">
+
+    <div class="hd-shell">
+        <aside class="hd-sidebar">
+            <div class="hd-sidebar-brand">
+                <div class="marca">Help Desk</div>
+                <div class="sub">Central de atendimento</div>
+            </div>
+
+            <nav class="hd-sidebar-nav">
+                <div class="hd-grupo-titulo">Chamados</div>
+
+                <a class="@ClasseAtiva("Tickets", "Index")" href="@Url.Action("Index", "Tickets")">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4Z"/>
+                        <path d="M10 6v12" stroke-dasharray="2 2"/>
+                    </svg>
+                    Chamados
+                </a>
+
+                <a class="@ClasseAtiva("Tickets", "Create")" href="@Url.Action("Create", "Tickets")">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="9"/>
+                        <path d="M12 8v8M8 12h8"/>
+                    </svg>
+                    Novo chamado
+                </a>
+
+                <a class="@ClasseAtiva("Home", "Index")" href="@Url.Action("Index", "Home")">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="9" />
+                        <path d="M12 8v8M8 12h8" />
+                    </svg>
+                    Home
+                </a>
+
+                <div class="hd-grupo-titulo">Administração</div>
+
+                <a class="@ClasseAtiva("Usuarios", "Index")" href="@Url.Action("Index", "Usuarios")">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/>
+                        <circle cx="10" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                    Usuários
+                </a>
+
+                <a class="@ClasseAtiva("Usuarios", "Create")" href="@Url.Action("Create", "Usuarios")">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="8.5" cy="7" r="4"/>
+                        <path d="M20 8v6M23 11h-6"/>
+                    </svg>
+                    Novo usuário
+                </a>
+            </nav>
+
+            <div class="hd-sidebar-footer">
+                @if (usuarioLogadoId != null)
+                {
+                    <div class="usuario-nome">@Context.Session.GetString("UsuarioNome")</div>
+                    <div class="usuario-perfil">@Context.Session.GetString("UsuarioPerfil")</div>
+                    <a class="hd-sair" href="@Url.Action("Logout", "Account")">
+                        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                            <path d="M16 17l5-5-5-5"/>
+                            <path d="M21 12H9"/>
+                        </svg>
+                        Sair
+                    </a>
+                }
+                else
+                {
+                    <a class="hd-sair" href="@Url.Action("Login", "Account")">
+                        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+                            <path d="M10 17l5-5-5-5"/>
+                            <path d="M15 12H3"/>
+                        </svg>
+                        Entrar
+                    </a>
+                }
+            </div>
+        </aside>
+
+        <div class="hd-main">
+            @RenderBody()
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,59 @@
+@model HelpDesk.ViewModels.LoginViewModel
+@{
+    ViewData["Title"] = "Entrar";
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Help Desk — Entrar</title>
+    <link rel="stylesheet" href="~/css/helpdesk.css" />
+</head>
+<body class="helpdesk">
+
+    <div class="hd-topbar">
+        <div class="hd-marca-grupo">
+            <span class="hd-marca">Help Desk</span>
+            <span class="hd-sub">Central de atendimento e suporte</span>
+        </div>
+    </div>
+
+    <div class="hd-container" style="max-width:420px;">
+
+        <div class="hd-page-header" style="display:block;">
+            <h1>Entrar</h1>
+            <p>Use seu e-mail e senha cadastrados para acessar o Help Desk.</p>
+        </div>
+
+        <div class="hd-filtros" style="padding:24px;">
+
+            @* <div asp-validation-summary="All" class="hd-badge sla-estourado" style="display:block; padding:10px 14px; margin-bottom:16px;"></div> *@
+
+            <form asp-action="Login" asp-controller="Account" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="ReturnUrl" />
+
+                <div class="campo" style="margin-bottom:16px;">
+                    <label asp-for="Email">E-mail</label>
+                    <input asp-for="Email" type="email" style="width:100%;" placeholder="nome@empresa.com" autofocus />
+                    <span asp-validation-for="Email" class="hd-titulo-linha" style="color:var(--hd-sla-estourado);"></span>
+                </div>
+
+                <div class="campo" style="margin-bottom:22px;">
+                    <label asp-for="Senha">Senha</label>
+                    <input asp-for="Senha" type="password" style="width:100%;" />
+                    <span asp-validation-for="Senha" class="hd-titulo-linha" style="color:var(--hd-sla-estourado);"></span>
+                </div>
+
+                <button type="submit" class="btn-hd-primary" style="width:100%;">Entrar</button>
+            </form>
+        </div>
+
+        <p class="hd-titulo-linha" style="text-align:center; margin-top:14px;">
+            Ainda não tem uma conta? <a href="@Url.Action("Create", "Usuarios")" class="hd-titulo-linha">Cadastre-se aqui</a>.
+        </p>
+    </div>
+</body>
+</html>

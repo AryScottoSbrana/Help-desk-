@@ -1,0 +1,204 @@
+@model HelpDesk.ViewModels.TicketIndexViewModel
+@{
+    ViewData["Title"] = "Chamados";
+}
+<div class="hd-container">
+
+        @if (TempData["Mensagem"] != null)
+        {
+            <div class="hd-badge sla-ok" style="margin-bottom:14px; display:block; padding:10px 14px;">@TempData["Mensagem"]</div>
+        }
+        @if (TempData["Erro"] != null)
+        {
+            <div class="hd-badge sla-estourado" style="margin-bottom:14px; display:block; padding:10px 14px;">@TempData["Erro"]</div>
+        }
+
+        <div class="hd-page-header">
+            <div>
+                <h1>Chamados</h1>
+                <p>Acompanhe, filtre e atenda os tickets abertos, com controle de prazo de SLA.</p>
+            </div>
+            <a class="btn-hd-primary" href="@Url.Action("Create", "Tickets")">+ Abrir novo chamado</a>
+        </div>
+
+        <div class="hd-kpis">
+            <div class="hd-kpi">
+                <div class="valor">@Model.TotalAbertos</div>
+                <div class="rotulo">Aguardando atendimento</div>
+            </div>
+            <div class="hd-kpi">
+                <div class="valor">@Model.TotalEmAtendimento</div>
+                <div class="rotulo">Em atendimento</div>
+            </div>
+            <div class="hd-kpi alerta">
+                <div class="valor">@Model.TotalSlaEstourado</div>
+                <div class="rotulo">Com SLA estourado</div>
+            </div>
+            <div class="hd-kpi">
+                <div class="valor">@Model.TotalResolvidosNoMes</div>
+                <div class="rotulo">Resolvidos este mês</div>
+            </div>
+        </div>
+
+        <form method="get" asp-action="Index" class="hd-filtros hd-filtros-linha-unica">
+            <div class="linha">
+                <div class="campo">
+                    <label for="Busca">Buscar</label>
+                    <input type="text" id="Busca" name="Busca" style="width:90%;" placeholder="Número ou título..." value="@Model.Filtro.Busca"
+                           oninput="clearTimeout(window.__hdBuscaTimer); window.__hdBuscaTimer = setTimeout(() => this.form.submit(), 500);" />
+                </div>
+
+                <div class="campo">
+                    <label for="ModuloId">Módulo</label>
+                    <select id="ModuloId" name="ModuloId" onchange="this.form.submit()">
+                        <option value="">Todos</option>
+                        @foreach (var m in Model.Modulos)
+                        {
+                            <option value="@m.Id" selected="@(Model.Filtro.ModuloId == m.Id)">@m.Nome</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="campo">
+                    <label for="CategoriaId">Categoria</label>
+                    <select id="CategoriaId" name="CategoriaId" onchange="this.form.submit()">
+                        <option value="">Todas</option>
+                        @foreach (var c in Model.Categorias)
+                        {
+                            <option value="@c.Id" selected="@(Model.Filtro.CategoriaId == c.Id)">@c.Nome</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="campo">
+                    <label for="PrioridadeId">Prioridade</label>
+                    <select id="PrioridadeId" name="PrioridadeId" onchange="this.form.submit()">
+                        <option value="">Todas</option>
+                        @foreach (var p in Model.Prioridades)
+                        {
+                            <option value="@p.Id" selected="@(Model.Filtro.PrioridadeId == p.Id)">@p.Nome</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="campo">
+                    <label for="StatusId">Status</label>
+                    <select id="StatusId" name="StatusId" onchange="this.form.submit()">
+                        <option value="">Todos</option>
+                        @foreach (var s in Model.StatusList)
+                        {
+                            <option value="@s.Id" selected="@(Model.Filtro.StatusId == s.Id)">@s.Nome</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="campo campo-check-duplo">
+                    <div class="campo-check">
+                        <input type="checkbox" id="ApenasComSlaEstourado" name="ApenasComSlaEstourado" value="true" checked="@Model.Filtro.ApenasComSlaEstourado" onchange="this.form.submit()" />
+                        <label for="ApenasComSlaEstourado">Somente SLA estourado</label>
+                    </div>
+                    <div class="campo-check">
+                        <input type="checkbox" id="ApenasMeusTickets" name="ApenasMeusTickets" value="true" checked="@Model.Filtro.ApenasMeusTickets" onchange="this.form.submit()" />
+                        <label for="ApenasMeusTickets">Meus chamados</label>
+                    </div>
+                </div>
+            </div>
+        </form>
+
+        @if (!Model.Tickets.Any())
+        {
+            <div class="hd-filtros hd-vazio">Nenhum chamado encontrado com os filtros selecionados.</div>
+        }
+        else
+        {
+            <div class="hd-ticket-cards">
+                @foreach (var t in Model.Tickets)
+                {
+                    var (classeSla, textoSla) = t.Sla switch
+                    {
+                        HelpDesk.ViewModels.SlaSituacao.DentroDoPrazo => ("sla-ok", "Dentro do prazo"),
+                        HelpDesk.ViewModels.SlaSituacao.ProximoDoLimite => ("sla-alerta", "Próximo do limite"),
+                        HelpDesk.ViewModels.SlaSituacao.Estourado => ("sla-estourado", "SLA estourado"),
+                        _ => ("sla-encerrado", "Encerrado")
+                    };
+
+                    <a class="hd-ticket-card" href="@Url.Action("Details", "Tickets", new { id = t.Id })">
+
+                        <div class="hd-card-topo">
+                            <div class="hd-card-topo-esq">
+                                <span class="hd-numero">@t.DataAbertura.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
+                                <span class="hd-card-titulo">@t.NumeroTicket</span>
+                                <span class="valor-campo">@t.Titulo</span>
+                            </div>
+
+                            <div>
+                                 <div class="item">
+                                    <div class="hd-card-titulo">@(t.Modulo?.Length >= 8 ? t.Modulo.Substring(7) : t.Modulo)</div>
+                                    <div class="hd-card-titulo muted">@t.Categoria</div>
+                                </div>
+                            </div>
+
+                            <div class="hd-card-topo-dir">
+                                <span class="hd-badge status">@t.Status</span>
+                            </div>
+                        </div>
+
+                        <div class="hd-card-grid">
+                            <div class="item">
+                                <label>Solicitante</label>
+                                <div class="valor-campo">@t.Solicitante</div>
+                            </div>
+
+                            <div class="item">
+                                <label>Prioridade</label>
+                                <div class="valor-campo"><span class="hd-prioridade-dot" style="background:@(t.PrioridadeCorHex ?? "#999")"></span>@t.Prioridade</div>
+                            </div>
+
+                            <div class="item">
+                                <label>SLA</label>
+                                <div class="valor-campo">
+                                    <span class="hd-badge @classeSla">@textoSla</span>
+                                    <div class="hd-titulo-linha">até @t.DataLimiteSla.ToLocalTime().ToString("dd/MM HH:mm")</div>
+                                </div>
+                            </div>
+                            
+                            <div class="item">
+                                <label>Atendente</label>
+                                <div class="valor-campo muted">@(t.Atendente ?? "Não atribuído")</div>
+                            </div>
+                            
+                            <div class="hd-card-topo-dir">
+                                <span class="hd-anexo-count">@t.QuantidadeAnexos anexo(s)</span>
+                            </div>
+                        </div>
+                    </a>
+                }
+            </div>
+
+            @if (Model.TotalPaginas > 1)
+            {
+                <div class="hd-paginacao">
+                    @for (int p = 1; p <= Model.TotalPaginas; p++)
+                    {
+                        if (p == Model.Filtro.PaginaAtual)
+                        {
+                            <span class="ativa">@p</span>
+                        }
+                        else
+                        {
+                            <a href="@Url.Action("Index", "Tickets", new {
+                                Busca = Model.Filtro.Busca,
+                                ModuloId = Model.Filtro.ModuloId,
+                                CategoriaId = Model.Filtro.CategoriaId,
+                                PrioridadeId = Model.Filtro.PrioridadeId,
+                                StatusId = Model.Filtro.StatusId,
+                                ApenasComSlaEstourado = Model.Filtro.ApenasComSlaEstourado,
+                                ApenasMeusTickets = Model.Filtro.ApenasMeusTickets,
+                                PaginaAtual = p
+                            })">@p</a>
+                        }
+                    }
+                </div>
+            }
+        }
+    </div>
