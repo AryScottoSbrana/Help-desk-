@@ -9,6 +9,7 @@ namespace HelpDesk.Data
 
         public DbSet<Usuario> Usuarios => Set<Usuario>();
         public DbSet<Perfil> Perfis => Set<Perfil>();
+        public DbSet<Empresa> Empresas => Set<Empresa>();
         public DbSet<Categoria> Categorias => Set<Categoria>();
         public DbSet<Modulo> Modulos => Set<Modulo>();
         public DbSet<Prioridade> Prioridades => Set<Prioridade>();
@@ -19,6 +20,12 @@ namespace HelpDesk.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            // O script SQL criou esta tabela no singular (TicketHistorico), mas a
+            // convenção do EF Core mapearia para o nome do DbSet (plural,
+            // TicketHistoricos). Mapeamento explícito evita o erro "invalid object
+            // name" sem precisar renomear a tabela já existente no banco.
+            modelBuilder.Entity<TicketHistorico>().ToTable("TicketHistorico");
+
             modelBuilder.Entity<Usuario>()
                 .HasIndex(u => u.Email)
                 .IsUnique();
@@ -38,9 +45,6 @@ namespace HelpDesk.Data
                 .WithMany(u => u.TicketsAtendidos)
                 .HasForeignKey(t => t.AtendenteId)
                 .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<TicketHistorico>()
-                .ToTable("TicketHistorico");
 
             modelBuilder.Entity<TicketHistorico>()
                 .HasOne(h => h.StatusAnterior)

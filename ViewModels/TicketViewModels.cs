@@ -18,8 +18,9 @@ namespace HelpDesk.ViewModels
         public int Id { get; set; }
         public string NumeroTicket { get; set; } = string.Empty;
         public string Titulo { get; set; } = string.Empty;
-        public string Categoria { get; set; } = string.Empty;
+        public string Empresa { get; set; } = string.Empty;
         public string Modulo { get; set; } = string.Empty;
+        public string Categoria { get; set; } = string.Empty;
         public string Prioridade { get; set; } = string.Empty;
         public string? PrioridadeCorHex { get; set; }
         public string Status { get; set; } = string.Empty;
@@ -36,8 +37,9 @@ namespace HelpDesk.ViewModels
     public class TicketFiltroViewModel
     {
         public string? Busca { get; set; }
-        public int? CategoriaId { get; set; }
+        public int? EmpresaId { get; set; }
         public int? ModuloId { get; set; }
+        public int? CategoriaId { get; set; }
         public int? PrioridadeId { get; set; }
         public int? StatusId { get; set; }
         public bool ApenasComSlaEstourado { get; set; }
@@ -56,8 +58,10 @@ namespace HelpDesk.ViewModels
         public int TotalRegistros { get; set; }
         public int TotalPaginas { get; set; }
 
-        public List<Categoria2ViewModel> Categorias { get; set; } = new();
+        public List<Empresa2ViewModel> Empresas { get; set; } = new();
+        public bool MostrarFiltroEmpresa { get; set; }
         public List<Modulo2ViewModel> Modulos { get; set; } = new();
+        public List<Categoria2ViewModel> Categorias { get; set; } = new();
         public List<Prioridade2ViewModel> Prioridades { get; set; } = new();
         public List<Status2ViewModel> StatusList { get; set; } = new();
 
@@ -68,13 +72,13 @@ namespace HelpDesk.ViewModels
         public int TotalResolvidosNoMes { get; set; }
     }
 
-    public class Categoria2ViewModel
+    public class Modulo2ViewModel
     {
         public int Id { get; set; }
         public string Nome { get; set; } = string.Empty;
     }
 
-    public class Modulo2ViewModel
+    public class Categoria2ViewModel
     {
         public int Id { get; set; }
         public string Nome { get; set; } = string.Empty;
@@ -98,6 +102,7 @@ namespace HelpDesk.ViewModels
     {
         public int Id { get; set; }
         public string Nome { get; set; } = string.Empty;
+        public string? Empresa { get; set; }
     }
 
     /// <summary>Formulário de abertura de um novo ticket.</summary>
@@ -113,13 +118,13 @@ namespace HelpDesk.ViewModels
         [Display(Name = "Descrição da necessidade")]
         public string Descricao { get; set; } = string.Empty;
 
+        [Required(ErrorMessage = "Selecione o módulo do sistema.")]
+        [Display(Name = "Módulo")]
+        public int ModuloId { get; set; }
+
         [Required(ErrorMessage = "Selecione uma categoria.")]
         [Display(Name = "Categoria")]
         public int CategoriaId { get; set; }
-
-        [Required(ErrorMessage = "Selecione um modulo.")]
-        [Display(Name = "Modulo")]
-        public int ModuloId { get; set; }
 
         [Required(ErrorMessage = "Selecione a prioridade.")]
         [Display(Name = "Prioridade")]
@@ -128,8 +133,8 @@ namespace HelpDesk.ViewModels
         [Display(Name = "Anexos (imagens de comprovação)")]
         public List<IFormFile>? Anexos { get; set; }
 
-        public List<Categoria2ViewModel> Categorias { get; set; } = new();
         public List<Modulo2ViewModel> Modulos { get; set; } = new();
+        public List<Categoria2ViewModel> Categorias { get; set; } = new();
         public List<Prioridade2ViewModel> Prioridades { get; set; } = new();
     }
 
@@ -154,4 +159,3 @@ namespace HelpDesk.ViewModels
         public DateTime DataUpload { get; set; }
     }
 }
-

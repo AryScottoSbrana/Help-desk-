@@ -13,6 +13,24 @@ namespace HelpDesk.Models
         public ICollection<Usuario> Usuarios { get; set; } = new List<Usuario>();
     }
 
+    /// <summary>Empresa cliente do Help Desk — cada usuário pertence a exatamente
+    /// uma empresa, e os chamados só são visíveis dentro da mesma empresa.</summary>
+    public class Empresa
+    {
+        public int Id { get; set; }
+
+        [Required, MaxLength(150)]
+        public string Nome { get; set; } = string.Empty;
+
+        [MaxLength(20)]
+        public string? Documento { get; set; }
+
+        public bool Ativo { get; set; } = true;
+        public DateTime DataCriacao { get; set; } = DateTime.UtcNow;
+
+        public ICollection<Usuario> Usuarios { get; set; } = new List<Usuario>();
+    }
+
     public class Usuario
     {
         public int Id { get; set; }
@@ -28,6 +46,9 @@ namespace HelpDesk.Models
 
         public int PerfilId { get; set; }
         public Perfil? Perfil { get; set; }
+
+        public int EmpresaId { get; set; }
+        public Empresa? Empresa { get; set; }
 
         public bool Ativo { get; set; } = true;
         public DateTime DataCriacao { get; set; } = DateTime.UtcNow;
@@ -49,12 +70,21 @@ namespace HelpDesk.Models
         public bool Ativo { get; set; } = true;
     }
 
+    /// <summary>Representa o módulo/sistema para o qual o chamado está sendo aberto
+    /// (ex.: Financeiro, RH, Comercial) — estrutura idêntica à de Categoria.</summary>
     public class Modulo
     {
         public int Id { get; set; }
 
         [Required, MaxLength(80)]
         public string Nome { get; set; } = string.Empty;
+
+        [MaxLength(300)]
+        public string? Descricao { get; set; }
+
+        public int Sequencia { get; set; }
+
+        public bool Ativo { get; set; } = true;
     }
 
     public class Prioridade
@@ -99,11 +129,14 @@ namespace HelpDesk.Models
         [Required]
         public string Descricao { get; set; } = string.Empty;
 
-        public int CategoriaId { get; set; }
-        public Categoria? Categoria { get; set; }
+        public int EmpresaId { get; set; }
+        public Empresa? Empresa { get; set; }
 
         public int ModuloId { get; set; }
         public Modulo? Modulo { get; set; }
+
+        public int CategoriaId { get; set; }
+        public Categoria? Categoria { get; set; }
 
         public int PrioridadeId { get; set; }
         public Prioridade? Prioridade { get; set; }

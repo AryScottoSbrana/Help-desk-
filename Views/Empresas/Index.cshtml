@@ -1,0 +1,61 @@
+@model HelpDesk.ViewModels.EmpresaIndexViewModel
+@{
+    ViewData["Title"] = "Empresas";
+}
+<div class="hd-container">
+
+    @if (TempData["Mensagem"] != null)
+    {
+        <div class="hd-badge sla-ok" style="margin-bottom:14px; display:block; padding:10px 14px;">@TempData["Mensagem"]</div>
+    }
+
+    <div class="hd-page-header">
+        <div>
+            <h1>Empresas</h1>
+            <p>Clientes atendidos por este Help Desk. Cada usuário pertence a uma única empresa.</p>
+        </div>
+        <a class="btn-hd-primary" href="@Url.Action("Create", "Empresas")">+ Nova empresa</a>
+    </div>
+
+    <div class="hd-tabela-wrap">
+        @if (!Model.Empresas.Any())
+        {
+            <div class="hd-vazio">Nenhuma empresa cadastrada ainda.</div>
+        }
+        else
+        {
+            <table class="hd-tabela">
+                <thead>
+                    <tr>
+                        <th>Empresa</th>
+                        <th>Documento</th>
+                        <th>Usuários</th>
+                        <th>Situação</th>
+                        <th>Cadastrada em</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var e in Model.Empresas)
+                    {
+                        <tr>
+                            <td>@e.Nome</td>
+                            <td>@(e.Documento ?? "—")</td>
+                            <td>@e.QuantidadeUsuarios</td>
+                            <td>
+                                @if (e.Ativo)
+                                {
+                                    <span class="hd-badge sla-ok">Ativa</span>
+                                }
+                                else
+                                {
+                                    <span class="hd-badge sla-encerrado">Inativa</span>
+                                }
+                            </td>
+                            <td>@e.DataCriacao.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>

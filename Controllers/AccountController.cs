@@ -34,6 +34,7 @@ namespace HelpDesk.Controllers
 
             var usuario = await _context.Usuarios
                 .Include(u => u.Perfil)
+                .Include(u => u.Empresa)
                 .FirstOrDefaultAsync(u => u.Email.ToLower() == model.Email.Trim().ToLower());
 
             var senhaOk = usuario != null && SenhaConfere(model.Senha, usuario.SenhaHash, usuario.SenhaSalt);
@@ -47,6 +48,8 @@ namespace HelpDesk.Controllers
             HttpContext.Session.SetInt32("UsuarioId", usuario.Id);
             HttpContext.Session.SetString("UsuarioNome", usuario.Nome);
             HttpContext.Session.SetString("UsuarioPerfil", usuario.Perfil!.Nome);
+            HttpContext.Session.SetInt32("EmpresaId", usuario.EmpresaId);
+            HttpContext.Session.SetString("EmpresaNome", usuario.Empresa!.Nome);
 
             return RedirectToLocal(model.ReturnUrl);
         }

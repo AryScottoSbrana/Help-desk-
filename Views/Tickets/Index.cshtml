@@ -44,9 +44,23 @@
             <div class="linha">
                 <div class="campo">
                     <label for="Busca">Buscar</label>
-                    <input type="text" id="Busca" name="Busca" style="width:90%;" placeholder="Número ou título..." value="@Model.Filtro.Busca"
+                    <input type="text" id="Busca" name="Busca" placeholder="Número ou título..." value="@Model.Filtro.Busca"
                            oninput="clearTimeout(window.__hdBuscaTimer); window.__hdBuscaTimer = setTimeout(() => this.form.submit(), 500);" />
                 </div>
+
+                @if (Model.MostrarFiltroEmpresa)
+                {
+                    <div class="campo">
+                        <label for="EmpresaId">Empresa</label>
+                        <select id="EmpresaId" name="EmpresaId" onchange="this.form.submit()">
+                            <option value="">Todas</option>
+                            @foreach (var e in Model.Empresas)
+                            {
+                                <option value="@e.Id" selected="@(Model.Filtro.EmpresaId == e.Id)">@e.Nome</option>
+                            }
+                        </select>
+                    </div>
+                }
 
                 <div class="campo">
                     <label for="ModuloId">Módulo</label>
@@ -124,36 +138,41 @@
 
                     <a class="hd-ticket-card" href="@Url.Action("Details", "Tickets", new { id = t.Id })">
 
+                        @if (Model.MostrarFiltroEmpresa)
+                        {
+                            <div class="hd-card-empresa">@t.Empresa</div>
+                        }
+
                         <div class="hd-card-topo">
                             <div class="hd-card-topo-esq">
-                                <span class="hd-numero">@t.DataAbertura.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
-                                <span class="hd-card-titulo">@t.NumeroTicket</span>
-                                <span class="valor-campo">@t.Titulo</span>
+                                <span class="hd-card-data">@t.DataAbertura.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
+                                <span class="hd-numero">@t.NumeroTicket</span>
+                                <span class="hd-card-titulo">@t.Titulo</span>
                             </div>
-
-                            <div>
-                                 <div class="item">
-                                    <div class="hd-card-titulo">@(t.Modulo?.Length >= 8 ? t.Modulo.Substring(7) : t.Modulo)</div>
-                                    <div class="hd-card-titulo muted">@t.Categoria</div>
-                                </div>
-                            </div>
-
                             <div class="hd-card-topo-dir">
                                 <span class="hd-badge status">@t.Status</span>
+                                <span class="hd-anexo-count">@t.QuantidadeAnexos anexo(s)</span>
                             </div>
                         </div>
 
                         <div class="hd-card-grid">
+                            <div class="item">
+                                <label>Módulo</label>
+                                <div class="valor-campo">@t.Modulo</div>
+                            </div>
+                            <div class="item">
+                                <label>Prioridade</label>
+                                <div class="valor-campo"><span class="hd-prioridade-dot" style="background:@(t.PrioridadeCorHex ?? "#999")"></span>@t.Prioridade</div>
+                            </div>
                             <div class="item">
                                 <label>Solicitante</label>
                                 <div class="valor-campo">@t.Solicitante</div>
                             </div>
 
                             <div class="item">
-                                <label>Prioridade</label>
-                                <div class="valor-campo"><span class="hd-prioridade-dot" style="background:@(t.PrioridadeCorHex ?? "#999")"></span>@t.Prioridade</div>
+                                <label>Categoria</label>
+                                <div class="valor-campo muted">@t.Categoria</div>
                             </div>
-
                             <div class="item">
                                 <label>SLA</label>
                                 <div class="valor-campo">
@@ -161,14 +180,9 @@
                                     <div class="hd-titulo-linha">até @t.DataLimiteSla.ToLocalTime().ToString("dd/MM HH:mm")</div>
                                 </div>
                             </div>
-                            
                             <div class="item">
                                 <label>Atendente</label>
                                 <div class="valor-campo muted">@(t.Atendente ?? "Não atribuído")</div>
-                            </div>
-                            
-                            <div class="hd-card-topo-dir">
-                                <span class="hd-anexo-count">@t.QuantidadeAnexos anexo(s)</span>
                             </div>
                         </div>
                     </a>
@@ -188,6 +202,7 @@
                         {
                             <a href="@Url.Action("Index", "Tickets", new {
                                 Busca = Model.Filtro.Busca,
+                                EmpresaId = Model.Filtro.EmpresaId,
                                 ModuloId = Model.Filtro.ModuloId,
                                 CategoriaId = Model.Filtro.CategoriaId,
                                 PrioridadeId = Model.Filtro.PrioridadeId,

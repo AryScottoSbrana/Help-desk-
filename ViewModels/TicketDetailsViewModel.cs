@@ -13,6 +13,7 @@ namespace HelpDesk.ViewModels
 
         public string Categoria { get; set; } = string.Empty;
         public string Modulo { get; set; } = string.Empty;
+        public string Empresa { get; set; } = string.Empty;
         public string Prioridade { get; set; } = string.Empty;
         public string? PrioridadeCorHex { get; set; }
 

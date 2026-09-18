@@ -25,15 +25,24 @@ namespace HelpDesk.Controllers
         // GET: /Tickets
         public async Task<IActionResult> Index(TicketFiltroViewModel filtro)
         {
-            var query = _context.Tickets
-                .Include(t => t.Categoria)
+            // Solicitante só vê chamados da própria empresa; Atendente/Administrador
+            // veem chamados de todas as empresas (e podem filtrar por uma específica).
+            var query = _context.Tickets.AsQueryable();
+
+            if (!UsuarioPodeGerenciarAtendimento)
+                query = query.Where(t => t.EmpresaId == UsuarioLogadoEmpresaId);
+            else if (filtro.EmpresaId.HasValue)
+                query = query.Where(t => t.EmpresaId == filtro.EmpresaId);
+
+            query = query
+                .Include(t => t.Empresa)
                 .Include(t => t.Modulo)
+                .Include(t => t.Categoria)
                 .Include(t => t.Prioridade)
                 .Include(t => t.Status)
                 .Include(t => t.Solicitante)
                 .Include(t => t.Atendente)
-                .Include(t => t.Anexos)
-                .AsQueryable();
+                .Include(t => t.Anexos);
 
             if (!string.IsNullOrWhiteSpace(filtro.Busca))
             {
@@ -41,11 +50,11 @@ namespace HelpDesk.Controllers
                 query = query.Where(t => t.NumeroTicket.Contains(termo) || t.Titulo.Contains(termo));
             }
 
-            if (filtro.CategoriaId.HasValue)
-                query = query.Where(t => t.CategoriaId == filtro.CategoriaId);
-
             if (filtro.ModuloId.HasValue)
                 query = query.Where(t => t.ModuloId == filtro.ModuloId);
+
+            if (filtro.CategoriaId.HasValue)
+                query = query.Where(t => t.CategoriaId == filtro.CategoriaId);
 
             if (filtro.PrioridadeId.HasValue)
                 query = query.Where(t => t.PrioridadeId == filtro.PrioridadeId);
@@ -70,8 +79,9 @@ namespace HelpDesk.Controllers
                     Id = t.Id,
                     NumeroTicket = t.NumeroTicket,
                     Titulo = t.Titulo,
+                    Empresa = t.Empresa!.Nome,
+                    Modulo = t.Modulo!.Nome,
                     Categoria = t.Categoria!.Nome,
-                    Modulo = t.Modulo != null ? t.Modulo.Nome : null,
                     Prioridade = t.Prioridade!.Nome,
                     PrioridadeCorHex = t.Prioridade.CorHex,
                     Status = t.Status!.Nome,
@@ -89,6 +99,13 @@ namespace HelpDesk.Controllers
 
             var inicioMes = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
 
+            // Mesma regra de visibilidade aplicada aos indicadores (KPIs) do topo.
+            var kpiQuery = _context.Tickets.AsQueryable();
+            if (!UsuarioPodeGerenciarAtendimento)
+                kpiQuery = kpiQuery.Where(t => t.EmpresaId == UsuarioLogadoEmpresaId);
+            else if (filtro.EmpresaId.HasValue)
+                kpiQuery = kpiQuery.Where(t => t.EmpresaId == filtro.EmpresaId);
+
             var viewModel = new TicketIndexViewModel
             {
                 Filtro = filtro,
@@ -96,11 +113,17 @@ namespace HelpDesk.Controllers
                 TotalRegistros = totalRegistros,
                 TotalPaginas = (int)Math.Ceiling(totalRegistros / (double)filtro.TamanhoPagina),
 
+                MostrarFiltroEmpresa = UsuarioPodeGerenciarAtendimento,
+                Empresas = UsuarioPodeGerenciarAtendimento
+                    ? await _context.Empresas.Where(e => e.Ativo).OrderBy(e => e.Nome)
+                        .Select(e => new Empresa2ViewModel { Id = e.Id, Nome = e.Nome }).ToListAsync()
+                    : new List<Empresa2ViewModel>(),
+
+                Modulos = await _context.Modulos.Where(m => m.Ativo)
+                    .Select(m => new Modulo2ViewModel { Id = m.Id, Nome = m.Nome }).ToListAsync(),
+
                 Categorias = await _context.Categorias.Where(c => c.Ativo)
                     .Select(c => new Categoria2ViewModel { Id = c.Id, Nome = c.Nome }).ToListAsync(),
-
-                Modulos = await _context.Modulos
-                    .Select(m => new Modulo2ViewModel { Id = m.Id, Nome = m.Nome }).ToListAsync(),
 
                 Prioridades = await _context.Prioridades.Where(p => p.Ativo)
                     .Select(p => new Prioridade2ViewModel { Id = p.Id, Nome = p.Nome, TempoSlaHoras = p.TempoSlaHoras }).ToListAsync(),
@@ -108,10 +131,10 @@ namespace HelpDesk.Controllers
                 StatusList = await _context.StatusTickets.OrderBy(s => s.Ordem)
                     .Select(s => new Status2ViewModel { Id = s.Id, Nome = s.Nome }).ToListAsync(),
 
-                TotalAbertos = await _context.Tickets.CountAsync(t => t.Status!.Nome == "Aberto"),
-                TotalEmAtendimento = await _context.Tickets.CountAsync(t => t.Status!.Nome == "Em Atendimento"),
-                TotalSlaEstourado = await _context.Tickets.CountAsync(t => !t.Status!.Final && DateTime.UtcNow > t.DataLimiteSla),
-                TotalResolvidosNoMes = await _context.Tickets.CountAsync(t => t.DataFechamento != null && t.DataFechamento >= inicioMes)
+                TotalAbertos = await kpiQuery.CountAsync(t => t.Status!.Nome == "Aberto"),
+                TotalEmAtendimento = await kpiQuery.CountAsync(t => t.Status!.Nome == "Em Atendimento"),
+                TotalSlaEstourado = await kpiQuery.CountAsync(t => !t.Status!.Final && DateTime.UtcNow > t.DataLimiteSla),
+                TotalResolvidosNoMes = await kpiQuery.CountAsync(t => t.DataFechamento != null && t.DataFechamento >= inicioMes)
             };
 
             return View(viewModel);
@@ -122,10 +145,10 @@ namespace HelpDesk.Controllers
         {
             var viewModel = new TicketCreateViewModel
             {
+                Modulos = await _context.Modulos.Where(m => m.Ativo)
+                    .Select(m => new Modulo2ViewModel { Id = m.Id, Nome = m.Nome }).ToListAsync(),
                 Categorias = await _context.Categorias.Where(c => c.Ativo)
                     .Select(c => new Categoria2ViewModel { Id = c.Id, Nome = c.Nome }).ToListAsync(),
-                Modulos = await _context.Modulos
-                    .Select(m => new Modulo2ViewModel { Id = m.Id, Nome = m.Nome }).ToListAsync(),
                 Prioridades = await _context.Prioridades.Where(p => p.Ativo)
                     .Select(p => new Prioridade2ViewModel { Id = p.Id, Nome = p.Nome, TempoSlaHoras = p.TempoSlaHoras }).ToListAsync()
             };
@@ -160,8 +183,9 @@ namespace HelpDesk.Controllers
                 NumeroTicket = await GerarNumeroTicketAsync(),
                 Titulo = model.Titulo.Trim(),
                 Descricao = model.Descricao.Trim(),
-                CategoriaId = model.CategoriaId,
+                EmpresaId = UsuarioLogadoEmpresaId,
                 ModuloId = model.ModuloId,
+                CategoriaId = model.CategoriaId,
                 PrioridadeId = model.PrioridadeId,
                 StatusId = statusAberto.Id,
                 SolicitanteId = UsuarioLogadoId,
@@ -191,8 +215,9 @@ namespace HelpDesk.Controllers
         public async Task<IActionResult> Details(int id)
         {
             var ticket = await _context.Tickets
-                .Include(t => t.Categoria)
+                .Include(t => t.Empresa)
                 .Include(t => t.Modulo)
+                .Include(t => t.Categoria)
                 .Include(t => t.Prioridade)
                 .Include(t => t.Status)
                 .Include(t => t.Solicitante)
@@ -205,6 +230,9 @@ namespace HelpDesk.Controllers
 
             if (ticket == null) return NotFound();
 
+            // Solicitante só acessa chamados da própria empresa; Atendente/Admin acessam qualquer um.
+            if (!UsuarioPodeGerenciarAtendimento && ticket.EmpresaId != UsuarioLogadoEmpresaId) return NotFound();
+
             var viewModel = new TicketDetailsViewModel
             {
                 Id = ticket.Id,
@@ -212,7 +240,8 @@ namespace HelpDesk.Controllers
                 Titulo = ticket.Titulo,
                 Descricao = ticket.Descricao,
                 Categoria = ticket.Categoria!.Nome,
-                Modulo = ticket.Modulo != null ? ticket.Modulo.Nome : null,
+                Modulo = ticket.Modulo!.Nome,
+                Empresa = ticket.Empresa!.Nome,
                 Prioridade = ticket.Prioridade!.Nome,
                 PrioridadeCorHex = ticket.Prioridade.CorHex,
                 StatusId = ticket.StatusId,
@@ -253,9 +282,10 @@ namespace HelpDesk.Controllers
 
                 AtendentesDisponiveis = await _context.Usuarios
                     .Include(u => u.Perfil)
+                    .Include(u => u.Empresa)
                     .Where(u => u.Ativo && (u.Perfil!.Nome == "Atendente" || u.Perfil.Nome == "Administrador"))
                     .OrderBy(u => u.Nome)
-                    .Select(u => new UsuarioOpcaoViewModel { Id = u.Id, Nome = u.Nome })
+                    .Select(u => new UsuarioOpcaoViewModel { Id = u.Id, Nome = u.Nome, Empresa = u.Empresa!.Nome })
                     .ToListAsync(),
 
                 PodeGerenciarAtendimento = UsuarioPodeGerenciarAtendimento
@@ -280,7 +310,10 @@ namespace HelpDesk.Controllers
 
             if (atendenteId.HasValue)
             {
-                var atendenteValido = await _context.Usuarios.AnyAsync(u => u.Id == atendenteId && u.Ativo);
+                // Atendente/Admin gerenciam chamados de qualquer empresa, então o atendente
+                // atribuído também pode ser de uma empresa diferente da do chamado.
+                var atendenteValido = await _context.Usuarios
+                    .AnyAsync(u => u.Id == atendenteId && u.Ativo);
                 if (!atendenteValido)
                 {
                     TempData["Erro"] = "Atendente selecionado é inválido ou está inativo.";
@@ -330,6 +363,9 @@ namespace HelpDesk.Controllers
             var ticket = await _context.Tickets.FindAsync(ticketId);
             if (ticket == null) return NotFound();
 
+            // Solicitante só comenta em chamados da própria empresa; Atendente/Admin em qualquer um.
+            if (!UsuarioPodeGerenciarAtendimento && ticket.EmpresaId != UsuarioLogadoEmpresaId) return NotFound();
+
             if (!string.IsNullOrWhiteSpace(novoComentario))
             {
                 _context.TicketHistoricos.Add(new TicketHistorico
@@ -366,6 +402,8 @@ namespace HelpDesk.Controllers
 
             var ticket = await _context.Tickets.Include(t => t.Status).FirstOrDefaultAsync(t => t.Id == ticketId);
             if (ticket == null) return NotFound();
+            // Sem checagem de empresa aqui: quem chega até este ponto já é Atendente/Admin (checado acima),
+            // e esses perfis gerenciam chamados de todas as empresas.
 
             var novoStatus = await _context.StatusTickets.FindAsync(novoStatusId);
             if (novoStatus == null) return NotFound();
@@ -422,6 +460,7 @@ namespace HelpDesk.Controllers
 
             var ticket = await _context.Tickets.FirstOrDefaultAsync(t => t.Id == ticketId);
             if (ticket == null) return NotFound();
+            // Sem checagem de empresa: só Atendente/Admin chegam aqui, e gerenciam todas as empresas.
 
             var statusFechado = await _context.StatusTickets.FirstAsync(s => s.Nome == "Fechado");
             var statusAnteriorId = ticket.StatusId;
@@ -455,10 +494,10 @@ namespace HelpDesk.Controllers
 
         private async Task RecarregarCombos(TicketCreateViewModel model)
         {
+            model.Modulos = await _context.Modulos.Where(m => m.Ativo)
+                .Select(m => new Modulo2ViewModel { Id = m.Id, Nome = m.Nome }).ToListAsync();
             model.Categorias = await _context.Categorias.Where(c => c.Ativo)
                 .Select(c => new Categoria2ViewModel { Id = c.Id, Nome = c.Nome }).ToListAsync();
-            model.Modulos = await _context.Modulos
-                .Select(m => new Modulo2ViewModel { Id = m.Id, Nome = m.Nome }).ToListAsync();
             model.Prioridades = await _context.Prioridades.Where(p => p.Ativo)
                 .Select(p => new Prioridade2ViewModel { Id = p.Id, Nome = p.Nome, TempoSlaHoras = p.TempoSlaHoras }).ToListAsync();
         }

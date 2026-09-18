@@ -98,7 +98,7 @@ public class HomeController : ControllerAutenticado
             Categorias = await _context.Categorias.Where(c => c.Ativo)
                 .Select(c => new Categoria2ViewModel { Id = c.Id, Nome = c.Nome }).ToListAsync(),
 
-            Modulos = await _context.Modulos
+            Modulos = await _context.Modulos.OrderBy(m => m.Sequencia)
                 .Select(m => new Modulo2ViewModel { Id = m.Id, Nome = m.Nome }).ToListAsync(),
 
             Prioridades = await _context.Prioridades.Where(p => p.Ativo)
