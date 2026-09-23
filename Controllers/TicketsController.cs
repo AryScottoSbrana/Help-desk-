@@ -25,8 +25,9 @@ namespace HelpDesk.Controllers
         // GET: /Tickets
         public async Task<IActionResult> Index(TicketFiltroViewModel filtro)
         {
-            // Solicitante só vê chamados da própria empresa; Atendente/Administrador
-            // veem chamados de todas as empresas (e podem filtrar por uma específica).
+            // Solicitante: só vê chamados da própria empresa;
+            // Atendente/Administrador: veem chamados de todas as empresas (e podem filtrar por uma específica).
+            // ----
             var query = _context.Tickets.AsQueryable();
 
             if (!UsuarioPodeGerenciarAtendimento)

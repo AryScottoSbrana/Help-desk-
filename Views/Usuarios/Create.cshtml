@@ -19,8 +19,8 @@
             <span class="hd-sub">Central de atendimento e suporte</span>
         </div>
         <nav class="hd-nav">
-            <a href="@Url.Action("Index", "Tickets")">Chamados</a>
-            <a class="ativo" href="@Url.Action("Index", "Usuarios")">Usuários</a>
+            <a class="ativo" href="@Url.Action("Index", "Tickets")">Voltar</a>
+            @* <a class="ativo" href="@Url.Action("Index", "Usuarios")">Usuários</a> *@
         </nav>
     </div>
 
@@ -31,7 +31,7 @@
                 <h1>Novo usuário</h1>
                 <p>Cadastre um solicitante, atendente ou administrador do Help Desk.</p>
             </div>
-            <a class="btn-hd-outline" href="@Url.Action("Index", "Usuarios")">Voltar para a lista</a>
+            <a class="btn-hd-outline" href="@Url.Action("Index", "Usuarios")">Lista de Usuários</a>
         </div>
 
         <div class="hd-filtros" style="padding:24px;">

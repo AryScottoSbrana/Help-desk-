@@ -59,8 +59,13 @@ namespace HelpDesk.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(UsuarioCreateViewModel model)
         {
-            var emailJaExiste = await _context.Usuarios
-                .AnyAsync(u => u.Email.ToLower() == model.Email.Trim().ToLower());
+            var emailJaExiste = false;
+
+            if (model.Email != null)
+            {
+                emailJaExiste = await _context.Usuarios
+                    .AnyAsync(u => u.Email.ToLower() == model.Email.Trim().ToLower());
+            }
 
             if (emailJaExiste)
                 ModelState.AddModelError(nameof(model.Email), "Já existe um usuário cadastrado com este e-mail.");
