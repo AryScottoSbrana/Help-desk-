@@ -26,6 +26,7 @@ namespace HelpDesk.Controllers
         {
             var usuarios = await _context.Usuarios
                 .Include(u => u.Perfil)
+                .Include(e => e.Empresa)
                 .OrderBy(u => u.Nome)
                 .Select(u => new UsuarioListItemViewModel
                 {
@@ -33,6 +34,7 @@ namespace HelpDesk.Controllers
                     Nome = u.Nome,
                     Email = u.Email,
                     Perfil = u.Perfil!.Nome,
+                    NomeEmpresa = u.Empresa!.Nome,
                     Ativo = u.Ativo,
                     DataCriacao = u.DataCriacao
                 })
